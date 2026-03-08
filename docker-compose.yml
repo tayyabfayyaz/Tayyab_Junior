@@ -1,0 +1,140 @@
+version: "3.8"
+
+services:
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://backend:8000/api/v1
+    depends_on:
+      - backend
+    restart: on-failure:3
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - FTE_ENV=${FTE_ENV:-development}
+      - TASK_DIR=/data/tasks
+      - MEMORY_DIR=/data/memory
+      - LOG_DIR=/data/logs
+      - REPORTS_DIR=/data/reports
+      - JWT_SECRET=${JWT_SECRET:-change-me}
+      - JWT_ALGORITHM=${JWT_ALGORITHM:-HS256}
+      - JWT_EXPIRY_MINUTES=${JWT_EXPIRY_MINUTES:-60}
+      - OWNER_EMAIL=${OWNER_EMAIL:-owner@example.com}
+      - OWNER_PASSWORD_HASH=${OWNER_PASSWORD_HASH:-}
+      - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost:3000}
+      - WHATSAPP_VERIFY_TOKEN=${WHATSAPP_VERIFY_TOKEN:-}
+      - WHATSAPP_ACCESS_TOKEN=${WHATSAPP_ACCESS_TOKEN:-}
+      - WHATSAPP_PHONE_ID=${WHATSAPP_PHONE_ID:-}
+      - GITHUB_WEBHOOK_SECRET=${GITHUB_WEBHOOK_SECRET:-}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - EXECUTOR_MAX_RETRIES=${EXECUTOR_MAX_RETRIES:-3}
+      - CEO_EMAIL=${CEO_EMAIL:-}
+    volumes:
+      - ./tasks:/data/tasks
+      - ./memory:/data/memory
+      - ./logs:/data/logs
+      - ./reports:/data/reports
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: on-failure:3
+
+  executor:
+    build:
+      context: .
+      dockerfile: executor/Dockerfile
+    environment:
+      - TASK_DIR=/data/tasks
+      - MEMORY_DIR=/data/memory
+      - LOG_DIR=/data/logs
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - EXECUTOR_POLL_INTERVAL_SECONDS=${EXECUTOR_POLL_INTERVAL_SECONDS:-5}
+      - EXECUTOR_MAX_RETRIES=${EXECUTOR_MAX_RETRIES:-3}
+      - MCP_SERVER_URL=http://mcp-server:8001
+    volumes:
+      - ./tasks:/data/tasks
+      - ./memory:/data/memory
+      - ./logs:/data/logs
+    depends_on:
+      - mcp-server
+    restart: on-failure:3
+
+  mcp-server:
+    build:
+      context: .
+      dockerfile: mcp-server/Dockerfile
+    environment:
+      - LOG_DIR=/data/logs
+      - MCP_SERVER_PORT=8001
+      - WHATSAPP_ACCESS_TOKEN=${WHATSAPP_ACCESS_TOKEN:-}
+      - WHATSAPP_PHONE_ID=${WHATSAPP_PHONE_ID:-}
+      - GMAIL_CLIENT_ID=${GMAIL_CLIENT_ID:-}
+      - GMAIL_CLIENT_SECRET=${GMAIL_CLIENT_SECRET:-}
+      - GMAIL_MONITORED_EMAIL=${GMAIL_MONITORED_EMAIL:-}
+      - MEMORY_DIR=/data/memory
+    volumes:
+      - ./tasks:/data/tasks
+      - ./memory:/data/memory
+      - ./logs:/data/logs
+    restart: on-failure:3
+
+  ceo-assistant:
+    build:
+      context: .
+      dockerfile: ceo_assistant/Dockerfile
+    environment:
+      - CEO_EMAIL=${CEO_EMAIL:-}
+      - REPORT_TIME=${REPORT_TIME:-18:00}
+      - TASK_DIR=/data/tasks
+      - REPORTS_DIR=/data/reports
+      - MEMORY_DIR=/data/memory
+      - LOG_DIR=/data/logs
+      - GMAIL_CLIENT_ID=${GMAIL_CLIENT_ID:-}
+      - GMAIL_CLIENT_SECRET=${GMAIL_CLIENT_SECRET:-}
+      - GMAIL_MONITORED_EMAIL=${GMAIL_MONITORED_EMAIL:-}
+    volumes:
+      - ./tasks:/data/tasks
+      - ./reports:/data/reports
+      - ./memory:/data/memory
+      - ./logs:/data/logs
+    depends_on:
+      - backend
+    restart: on-failure:3
+
+  watchers:
+    build:
+      context: .
+      dockerfile: watchers/Dockerfile
+    environment:
+      - TASK_DIR=/data/tasks
+      - LOG_DIR=/data/logs
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - WHATSAPP_VERIFY_TOKEN=${WHATSAPP_VERIFY_TOKEN:-}
+      - WHATSAPP_ACCESS_TOKEN=${WHATSAPP_ACCESS_TOKEN:-}
+      - GMAIL_CLIENT_ID=${GMAIL_CLIENT_ID:-}
+      - GMAIL_CLIENT_SECRET=${GMAIL_CLIENT_SECRET:-}
+      - GMAIL_MONITORED_EMAIL=${GMAIL_MONITORED_EMAIL:-}
+      - MEMORY_DIR=/data/memory
+      - LINKEDIN_CLIENT_ID=${LINKEDIN_CLIENT_ID:-}
+      - LINKEDIN_CLIENT_SECRET=${LINKEDIN_CLIENT_SECRET:-}
+      - TWITTER_API_KEY=${TWITTER_API_KEY:-}
+      - TWITTER_API_SECRET=${TWITTER_API_SECRET:-}
+      - GITHUB_WEBHOOK_SECRET=${GITHUB_WEBHOOK_SECRET:-}
+    volumes:
+      - ./tasks:/data/tasks
+      - ./memory:/data/memory
+      - ./logs:/data/logs
+    depends_on:
+      - backend
+    restart: on-failure:3

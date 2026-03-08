@@ -1,0 +1,63 @@
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+venv/
+.venv/
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Node.js
+node_modules/
+.next/
+out/
+.turbo/
+
+# Logs
+*.log
+logs/*.jsonl
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+.dockerignore
+
+# Task files (tracked via .gitkeep only)
+tasks/need_action/*.md
+tasks/processing/*.md
+tasks/done/*.md
+tasks/failed/*.md
+
+# Memory content (user-specific)
+memory/preferences/*.md
+memory/clients/*.md
+memory/tone/*.md
+memory/knowledge/*.md
+memory/logs/*.md
+!memory/**/.gitkeep
+
+# OAuth credentials & tokens (never commit)
+memory/client_secret.json
+memory/gmail_token.json
+memory/linkedin_token.json
+memory/.oauth_state.json
+memory/gmail_watcher_state.json
+memory/twitter_watcher_state.json
+venv_linux/
